@@ -2,8 +2,10 @@ body {
 	font-family: sans-serif;
 	background-color: antiquewhite;
 }
-p {
+table, th, td {
+	border-collapse: collapse;
 }
+
 
 .iframe-container {
 	overflow: hidden;
@@ -20,5 +22,9 @@ p {
 	position: absolute;
 	top: 0;
 	width: 80%;
+
+}
+
+.color-chart table {
 
 }

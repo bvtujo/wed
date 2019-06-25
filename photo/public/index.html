@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <title>Photo Feed</title>
+    <style type="text/css">
+        #photoFile { display: none; }
+        #app img { max-width: 100%; }
+        .image-row { margin: 20px 0; }
+        .image-row .thumbnail {padding: 2px; border: 1px solid #d9d9d9; }
+    </style>
+</head>
+<body>
+    <div id="app">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Austin & Danielle's Wedding Photos</a>
+        </nav>
+
+        <div class="container">
+            <div class="row justify-content-md-center" id="loading" v-if="loading">
+                <div class="col-xs-12">
+                    Loading photos...
+                </div>
+            </div>
+            <div class="row justify-content-md-center image-row" v-for="photo in photos">
+                <div class="col col-lg-4 col-md-6 col-xs-12">
+                    <img class="thumbnail" :src="photo.src" alt="" />
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+
+    <script type="text/javascript">
+        new Vue({
+            el: '#app',
+            data: {
+                photos: [],
+                loading: true,
+            },
+            mounted() {
+                axios.get('/photos').then(res => {
+                    this.loading = false
+                    this.photos = res.data.items ? res.data.items : []
+                })
+            },
+            methods: {
+
+            }
+        })
+    </script>
+</body>
+</html>

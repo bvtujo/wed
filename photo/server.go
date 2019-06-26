@@ -3,18 +3,19 @@
 package main
 
 import (
-    "database/sql"
-    "io"
-    "net/http"
-    "os"
+	"database/sql"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
 
-    "github.com/labstack/echo"
-    "github.com/labstack/echo/middleware"
-    _ "github.com/mattn/go-sqlite3"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Photo struct {
-	ID int64 `json:"id"`
+	ID  int64  `json:"id"`
 	Src string `json:"src"`
 }
 
@@ -23,8 +24,10 @@ type PhotoCollection struct {
 }
 
 func initDb(filepath string) *sql.DB {
+
 	db, err := sql.Open("sqlite3", filepath)
 	if err != nil || db == nil {
+		fmt.Println("Error connecting to database")
 		panic("Error connecting to database")
 	}
 
@@ -42,6 +45,7 @@ func migrateDb(db *sql.DB) {
 
 	_, err := db.Exec(sql)
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
 }
@@ -50,6 +54,7 @@ func getPhotos(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		rows, err := db.Query("SELECT * FROM photos")
 		if err != nil {
+			fmt.Println(err)
 			panic(err)
 		}
 
@@ -59,29 +64,63 @@ func getPhotos(db *sql.DB) echo.HandlerFunc {
 
 		for rows.Next() {
 			photo := Photo{}
-
-			err2 := rows.Scan(&photo.ID, &photo.Src)
+			var seq int
+			err2 := rows.Scan(&photo.ID, &photo.Src, &seq)
 			if err2 != nil {
 				panic(err2)
 			}
 
 			result.Photos = append(result.Photos, photo)
 		}
-
+		fmt.Println(result)
 		return c.JSON(http.StatusOK, result)
+
 	}
 }
 
-func addPhotos(db *sql.DB) error {
-	
-	photo_path := "public/photos/"
+func addToDb(db *sql.DB, file os.FileInfo, basePath string) error {
 
-	panic("Not implemented.")
+	filePath := basePath + file.Name()
+
+	var seq int
+	_, err := fmt.Sscanf(filePath, "./photos/20190615_HenryEly_web-%d.jpeg", &seq)
+
+	stmt, err := db.Prepare("INSERT INTO photos (src, seqnum) VALUES (?, ?)")
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(filePath, seq)
+	fmt.Println("File " + filePath + " successfully added to database.")
+	return err
+}
+
+func addPhotos(db *sql.DB) error {
+
+	photo_path := "./public/photos/"
+	db_path := "/public/photos/"
+	f, err := os.Open(photo_path)
+	if err != nil {
+		fmt.Println(err)
+		log.Fatal(err)
+	}
+
+	files, err := f.Readdir(-1)
+	f.Close()
+
+	for _, file := range files {
+		addToDb(db, file, db_path)
+	}
+	return err
 }
 
 func main() {
 	db := initDb("database/db.sqlite")
 	migrateDb(db)
+
+	err := addPhotos(db)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	e := echo.New()
 
@@ -91,5 +130,5 @@ func main() {
 	e.File("/", "public/index.html")
 	e.GET("/photos", getPhotos(db))
 
-	e.Logger.Fatal(e.Start(":9000"))
+	e.Logger.Fatal(e.Start(":8080"))
 }

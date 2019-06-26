@@ -44,12 +44,10 @@
                 loading: true,
             },
             mounted() {
-                console.log("Axios mounted")
                 axios.get('/photos').then(res => {
                     this.loading = false
                     this.photos = res.data.items ? res.data.items : []
                 })
-                console.log(this.photos)
             },
         })
     </script>

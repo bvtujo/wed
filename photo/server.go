@@ -85,11 +85,13 @@ func addToDb(db *sql.DB, file os.FileInfo, basePath string) error {
 	var seq int
 	_, err := fmt.Sscanf(filePath, "./photos/20190615_HenryEly_web-%d.jpeg", &seq)
 
+	fleSrc := "127.0.0.1:8080/photos/" + file.Name()
+
 	stmt, err := db.Prepare("INSERT INTO photos (src, seqnum) VALUES (?, ?)")
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(filePath, seq)
+	_, err = stmt.Exec(fileSrc, seq)
 	fmt.Println("File " + filePath + " successfully added to database.")
 	return err
 }
